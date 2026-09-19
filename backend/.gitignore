@@ -1,0 +1,32 @@
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules/
+
+# Build
+dist/
+build/
+coverage/
+
+# Misc
+*.md
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# Local ML / Hugging Face model files
+.cache/
+models/
+checkpoints/
+**/*.safetensors
+**/*.bin
+**/*.pt
+**/*.pth
+**/*.onnx
+**/*.gguf
+**/*.ckpt
