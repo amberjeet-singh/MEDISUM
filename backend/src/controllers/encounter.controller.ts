@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { EncounterService } from '../services/encounter.service';
-import { encounterListSchema } from '../schemas/encounter.schema';
+import { encounterListSchema, encounterCreateSchema } from '../schemas/encounter.schema';
 import { idParamSchema } from '../schemas/common.schema';
 
 const encounterService = new EncounterService();
@@ -41,6 +41,34 @@ export const getEncounterById = async (req: Request, res: Response, next: NextFu
     res.json({
       success: true,
       data: encounter,
+      error: null
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createEncounter = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const validatedBody = encounterCreateSchema.parse(req.body);
+    const newEncounter = await encounterService.createEncounter({
+      patient_id: validatedBody.patient_id,
+      service: validatedBody.service || null,
+      attending: validatedBody.attending || null,
+      chief_complaint: validatedBody.chief_complaint || null,
+      major_surgical_or_invasive_procedure: null,
+      admission_datetime: null,
+      discharge_datetime: null,
+      discharge_disposition: null,
+      discharge_diagnosis: null,
+      discharge_condition: null,
+      followup_instructions: null,
+      discharge_instructions: null,
+    });
+
+    res.json({
+      success: true,
+      data: newEncounter,
       error: null
     });
   } catch (error) {

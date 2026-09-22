@@ -74,16 +74,16 @@ describe('Generation API and Providers', () => {
         
         const summary = await provider.generateSummary("system", "normal user prompt");
         
-        expect(summary.summary_content).toBeDefined();
-        expect(summary.diagnoses.includes("Hypertension")).toBe(true);
-        expect(summary.metadata?.mock).toBe(true);
+        expect(summary.content).toBeDefined();
+        expect(summary.content).toContain("Hypertension");
+        expect(summary.used_model).toBe("mock-model");
     });
 
     it('Mock Provider should support deterministic unsupported claims test', async () => {
         const provider = new MockSummaryProvider();
         const summary = await provider.generateSummary("system", "test UNSUPPORTED_CLAIM_TEST");
-        expect(summary.diagnoses).toContain("Invented Diagnosis");
-        expect(summary.metadata?.type).toBe("unsupported");
+        expect(summary.content).toContain("Invented Diagnosis");
+        expect(summary.used_model).toBe("mock-model");
     });
 
     it('Generation endpoint should return 200 with mock provider', async () => {
@@ -93,7 +93,7 @@ describe('Generation API and Providers', () => {
             
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
-        expect(res.body.data.summary_content).toBeDefined();
+        expect(res.body.data.content).toBeDefined();
     });
 
     it('Generation endpoint should select GeminiSummaryProvider when USE_MOCK_AI=false', async () => {
@@ -104,14 +104,7 @@ describe('Generation API and Providers', () => {
             candidates: [{
                 content: {
                     parts: [{
-                        text: JSON.stringify({
-                            summary_content: "Gemini provider invoked through endpoint",
-                            diagnoses: ["A"],
-                            procedures: ["B"],
-                            medications: ["C"],
-                            hospital_course: "Course",
-                            follow_up_instructions: "Follow up"
-                        })
+                        text: "Gemini provider invoked through endpoint"
                     }]
                 }
             }]
@@ -127,7 +120,7 @@ describe('Generation API and Providers', () => {
             
         expect(res.status).toBe(200);
         expect(res.body.success).toBe(true);
-        expect(res.body.data.summary_content).toBe("Gemini provider invoked through endpoint");
+        expect(res.body.data.content).toBe("Gemini provider invoked through endpoint");
         
         // Extract the payload sent to fetch to verify prompt compaction
         expect(global.fetch).toHaveBeenCalled();
@@ -167,14 +160,7 @@ describe('Generation API and Providers', () => {
             candidates: [{
                 content: {
                     parts: [{
-                        text: JSON.stringify({
-                            summary_content: "Real gemini summary",
-                            diagnoses: ["A"],
-                            procedures: ["B"],
-                            medications: ["C"],
-                            hospital_course: "Course",
-                            follow_up_instructions: "Follow up"
-                        })
+                        text: "Real gemini summary"
                     }]
                 }
             }]
@@ -189,32 +175,8 @@ describe('Generation API and Providers', () => {
         const summary = await provider.generateSummary("sys", "usr");
 
         expect(global.fetch).toHaveBeenCalled();
-        expect(summary.summary_content).toBe("Real gemini summary");
-        expect(summary.diagnoses).toEqual(["A"]);
+        expect(summary.content).toBe("Real gemini summary");
     });
 
-    it('Gemini Provider should reject invalid JSON structure from API', async () => {
-        env.USE_MOCK_AI = false;
-        env.GEMINI_API_KEY = 'TEST_KEY';
 
-        const mockResponse = {
-            candidates: [{
-                content: {
-                    parts: [{
-                        text: JSON.stringify({
-                            invalid_key: "This is missing required schema fields"
-                        })
-                    }]
-                }
-            }]
-        };
-
-        (global.fetch as any).mockResolvedValueOnce({
-            ok: true,
-            json: async () => mockResponse
-        });
-
-        const provider = new GeminiSummaryProvider();
-        await expect(provider.generateSummary("sys", "usr")).rejects.toThrow(/does not match the required schema/);
-    });
 });

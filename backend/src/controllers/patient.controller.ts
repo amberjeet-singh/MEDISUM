@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { PatientService } from '../services/patient.service';
-import { patientSearchSchema } from '../schemas/patient.schema';
+import { patientSearchSchema, patientCreateSchema } from '../schemas/patient.schema';
 import { idParamSchema } from '../schemas/common.schema';
 import { AppError } from '../utils/AppError';
 
@@ -33,6 +33,25 @@ export const getPatientById = async (req: Request, res: Response, next: NextFunc
     res.json({
       success: true,
       data: patient,
+      error: null
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createPatient = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const validatedBody = patientCreateSchema.parse(req.body);
+    const newPatient = await patientService.createPatient({
+      external_patient_ref: validatedBody.external_patient_ref || null,
+      sex: validatedBody.sex || null,
+      date_of_birth: validatedBody.date_of_birth || null,
+    });
+
+    res.json({
+      success: true,
+      data: newPatient,
       error: null
     });
   } catch (error) {

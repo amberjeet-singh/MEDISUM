@@ -13,6 +13,7 @@ coverage/
 
 # Misc
 *.md
+brain.md
 .DS_Store
 scratch/
 payload_debug.json

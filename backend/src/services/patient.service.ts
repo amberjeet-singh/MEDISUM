@@ -1,5 +1,5 @@
 import { PatientRepository } from '../repositories/patient.repository';
-import { Patient } from '../types/database.types';
+import { Patient, PatientInsert } from '../types/database.types';
 import { AppError } from '../utils/AppError';
 
 export class PatientService {
@@ -20,5 +20,13 @@ export class PatientService {
       throw new AppError(`Patient with id ${id} not found`, 404);
     }
     return patient;
+  }
+
+  async createPatient(patientData: PatientInsert): Promise<Patient> {
+    return this.patientRepo.create(patientData);
+  }
+
+  async updatePatient(id: string, updates: Partial<PatientInsert>): Promise<Patient> {
+    return this.patientRepo.update(id, updates);
   }
 }

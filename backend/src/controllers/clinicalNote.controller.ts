@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ClinicalNoteService } from '../services/clinicalNote.service';
-import { clinicalNoteListSchema } from '../schemas/clinicalNote.schema';
+import { clinicalNoteListSchema, clinicalNoteCreateSchema } from '../schemas/clinicalNote.schema';
 import { idParamSchema } from '../schemas/common.schema';
 
 const clinicalNoteService = new ClinicalNoteService();
@@ -65,4 +65,19 @@ export const getClinicalNoteCorpus = async (req: Request, res: Response, next: N
       } catch (error) {
         next(error);
       }
+};
+
+export const createClinicalNote = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const validatedBody = clinicalNoteCreateSchema.parse(req.body);
+        const newNote = await clinicalNoteService.createNoteFromRoughText(validatedBody.encounter_id, validatedBody.rough_notes);
+
+        res.json({
+            success: true,
+            data: newNote,
+            error: null
+        });
+    } catch (error) {
+        next(error);
+    }
 };

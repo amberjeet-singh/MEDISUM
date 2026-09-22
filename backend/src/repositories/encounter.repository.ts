@@ -25,6 +25,18 @@ export class EncounterRepository extends BaseRepository {
         return data as Encounter | null;
     }
 
+    async update(id: string, updates: Partial<EncounterInsert>): Promise<Encounter> {
+        const { data, error } = await supabase
+            .from('encounters')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) this.handleError(error, 'EncounterRepository.update');
+        return data as Encounter;
+    }
+
     async findByPatientId(patientId: string, page: number = 1, limit: number = 20): Promise<{ data: Encounter[], count: number }> {
         const from = (page - 1) * limit;
         const to = from + limit - 1;

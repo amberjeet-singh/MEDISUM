@@ -25,6 +25,18 @@ export class PatientRepository extends BaseRepository {
         return data as Patient | null;
     }
 
+    async update(id: string, updates: Partial<PatientInsert>): Promise<Patient> {
+        const { data, error } = await supabase
+            .from('patients')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+
+        if (error) this.handleError(error, 'PatientRepository.update');
+        return data as Patient;
+    }
+
     async findByExternalRef(externalRef: string): Promise<Patient | null> {
         const { data, error } = await supabase
             .from('patients')

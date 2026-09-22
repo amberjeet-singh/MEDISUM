@@ -58,7 +58,7 @@ app.use(errorHandler);
 
 // Start Server only if not required by tests
 if (require.main === module) {
-  app.listen(env.PORT, () => {
+  const server = app.listen(env.PORT, () => {
     console.log(`Server is running on port ${env.PORT} in ${env.NODE_ENV} mode`);
     console.log(`Local: http://localhost:${env.PORT}`);
     console.log(`API: http://localhost:${env.PORT}/api/v1`);
@@ -72,6 +72,11 @@ if (require.main === module) {
       }
     });
   });
+  
+  // Prevent 502 Bad Gateway timeouts from proxies/load balancers on long ML extractions
+  server.setTimeout(600000); // 10 minutes
+  server.keepAliveTimeout = 600000;
+  server.headersTimeout = 601000;
 }
 
 export default app;

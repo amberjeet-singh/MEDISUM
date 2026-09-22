@@ -1,4 +1,4 @@
-import { AIProvider, GenerationContext } from './provider.interface';
+import { AIProvider, GenerationContext, GenerationResult } from './provider.interface';
 import { env } from '../../config/env';
 import { MockSummaryProvider } from './mock.provider';
 import { GeminiSummaryProvider } from './gemini.provider';
@@ -6,7 +6,6 @@ import { ExtractionService } from '../extraction/extraction.service';
 import { ClinicalNoteService } from '../../services/clinicalNote.service';
 import { GeneratedSummaryRepository } from '../../repositories/generatedSummary.repository';
 import { getSystemPrompt, buildUserPrompt, PROMPT_VERSION_V1 } from './prompts';
-import { NormalizedSummaryOutput } from '../../schemas/generation.schema';
 import { AppError } from '../../utils/AppError';
 
 export class GenerationService {
@@ -30,7 +29,7 @@ export class GenerationService {
         }
     }
 
-    async generateDischargeSummary(encounterId: string): Promise<NormalizedSummaryOutput> {
+    async generateDischargeSummary(encounterId: string): Promise<GenerationResult> {
         // 1. Validate encounter & gather all context data using the Extraction Service pipeline
         let extractionResult;
         let notes;
@@ -76,10 +75,20 @@ export class GenerationService {
         const systemPrompt = getSystemPrompt();
         const userPrompt = buildUserPrompt(context);
 
+        // --- DIAGNOSTIC LOGGING ---
+        const totalFacts = extractionResult.extracted_facts ? extractionResult.extracted_facts.length : 0;
+        const compactedKeysCount = Object.keys(compactedFacts).length;
+        console.log(`[Diagnostic] Number of extracted facts: ${totalFacts}`);
+        console.log(`[Diagnostic] Compacted context size (keys): ${compactedKeysCount}`);
+        console.log(`[Diagnostic] Final prompt length (system): ${systemPrompt.length} chars`);
+        console.log(`[Diagnostic] Final prompt length (user): ${userPrompt.length} chars`);
+        console.log(`[Diagnostic] Generation configuration: { temperature: 0.2 }`);
+        // -------------------------
+
         // 2. Call the AI Provider
-        let normalizedOutput: NormalizedSummaryOutput;
+        let result: GenerationResult;
         try {
-            normalizedOutput = await this.provider.generateSummary(systemPrompt, userPrompt);
+            result = await this.provider.generateSummary(systemPrompt, userPrompt);
         } catch (error: any) {
             // Persist the failure state if possible
             await this.generatedSummaryRepo.create({
@@ -95,17 +104,18 @@ export class GenerationService {
         }
 
         // 3. Persist successful generation
+        const actualModelName = env.USE_MOCK_AI ? 'mock-model' : (result.used_model || 'gemini-3.5-flash-lite');
         await this.generatedSummaryRepo.create({
             encounter_id: encounterId,
             model_provider: env.USE_MOCK_AI ? 'mock' : 'gemini',
-            model_name: env.USE_MOCK_AI ? 'mock-model' : 'gemini-3.8-flash',
+            model_name: actualModelName,
             prompt_version: PROMPT_VERSION_V1,
-            content: JSON.stringify(normalizedOutput),
-            generation_metadata: { contextSize: extractionResult.note_corpus_size },
+            content: result.content, // Save plain text directly
+            generation_metadata: { contextSize: extractionResult.note_corpus_size, fallback_triggered: actualModelName !== 'gemini-3.5-flash-lite' },
             status: 'COMPLETED'
         });
 
         // 4. Return
-        return normalizedOutput;
+        return result;
     }
 }

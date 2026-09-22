@@ -1,4 +1,3 @@
-import { NormalizedSummaryOutput } from '../../schemas/generation.schema';
 
 export interface GenerationContext {
     patient: any;
@@ -8,11 +7,16 @@ export interface GenerationContext {
     deterministicMetrics: any;
 }
 
+export interface GenerationResult {
+    content: string;
+    used_model: string;
+}
+
 export interface AIProvider {
     /**
-     * Generates a normalized discharge summary based on the provided context and instructions.
+     * Generates a discharge summary based on the provided context and instructions.
      * @param systemPrompt The system instructions.
      * @param userPrompt The user prompt containing the context.
      */
-    generateSummary(systemPrompt: string, userPrompt: string): Promise<NormalizedSummaryOutput>;
+    generateSummary(systemPrompt: string, userPrompt: string): Promise<GenerationResult>;
 }

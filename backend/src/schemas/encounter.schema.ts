@@ -6,3 +6,10 @@ export const encounterListSchema = paginationSchema.extend({
   service: z.string().optional(),
   attending: z.string().optional(),
 });
+
+export const encounterCreateSchema = z.object({
+  patient_id: uuidSchema,
+  service: z.string().optional(),
+  attending: z.string().optional(),
+  chief_complaint: z.string().optional(),
+});

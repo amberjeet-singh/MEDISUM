@@ -8,9 +8,12 @@ CRITICAL INSTRUCTIONS:
 1. DO NOT INVENT FACTS. You must only use the information explicitly provided in the user's clinical context.
 2. DO NOT make unsupported medical assumptions.
 3. Use the deterministic demographic and encounter metrics (Age, Length of Stay, Admission/Discharge Dates) exactly as provided. Do not calculate them yourself.
-4. If a specific section (e.g., procedures, medications) has no information in the source text, leave the array empty or state "No information provided". Preserve uncertainty.
-5. The output must be structured exactly matching the requested JSON schema. Do not output markdown, just raw JSON.
-6. The 'claim_extraction_text' field must contain the full narrative of the summary so it can be parsed later by an extraction system.
+4. If a specific section (e.g., procedures, medications) has no information in the source text, leave it out or state "No information provided". Preserve uncertainty.
+5. Generate a concise clinical discharge summary in normal readable paragraphs.
+6. Do NOT output JSON. Do NOT output markdown tables. Do NOT output labels such as "summary_content:".
+7. Preserve medically important details.
+8. Include diagnoses, procedures, medications, hospital course, and follow-up when those facts are present.
+9. Do not mention unavailable information as if it were known.
 `;
 };
 
@@ -28,15 +31,5 @@ ${JSON.stringify(context.facts, null, 2)}
 
 ### Source Clinical Notes
 ${JSON.stringify(context.notes, null, 2)}
-
-Produce a JSON output with exactly these keys:
-{
-  "summary_content": "A narrative summary of the discharge.",
-  "diagnoses": ["List of diagnoses"],
-  "procedures": ["List of procedures"],
-  "medications": ["List of medications"],
-  "hospital_course": "Narrative of the hospital course.",
-  "follow_up_instructions": "Follow up details.",
-  "metadata": {}
-}`;
+`;
 };

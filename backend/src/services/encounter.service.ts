@@ -1,5 +1,5 @@
 import { EncounterRepository } from '../repositories/encounter.repository';
-import { Encounter } from '../types/database.types';
+import { Encounter, EncounterInsert } from '../types/database.types';
 import { AppError } from '../utils/AppError';
 
 export class EncounterService {
@@ -20,5 +20,13 @@ export class EncounterService {
       throw new AppError(`Encounter with id ${id} not found`, 404);
     }
     return encounter;
+  }
+
+  async createEncounter(encounterData: EncounterInsert): Promise<Encounter> {
+    return this.encounterRepo.create(encounterData);
+  }
+
+  async updateEncounter(id: string, updates: Partial<EncounterInsert>): Promise<Encounter> {
+    return this.encounterRepo.update(id, updates);
   }
 }
