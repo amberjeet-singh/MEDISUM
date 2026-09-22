@@ -41,11 +41,15 @@ import patientRoutes from './routes/patient.routes';
 import encounterRoutes from './routes/encounter.routes';
 import clinicalNoteRoutes from './routes/clinicalNote.routes';
 import extractionRoutes from './routes/extraction.routes';
+import generationRoutes from './routes/generation.routes';
+import verificationRoutes from './routes/verification.routes';
 
 // Use API v1 namespace
 app.use('/api/v1/patients', patientRoutes);
 app.use('/api/v1/encounters', encounterRoutes);
 app.use('/api/v1/encounters', extractionRoutes);
+app.use('/api/v1', generationRoutes);
+app.use('/api/v1', verificationRoutes);
 app.use('/api/v1/notes', clinicalNoteRoutes);
 app.use('/api/v1', apiRouter);
 

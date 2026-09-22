@@ -51,6 +51,8 @@ def run_extraction(chunks):
     for i, chunk in enumerate(chunks):
         text = chunk.get("text", "")
         start_offset = chunk.get("startIndex", 0)
+        chunk_id = chunk.get("id", f"chunk_{i}")
+        source_note_id = chunk.get("sourceNoteId")
 
         if not text:
             continue
@@ -66,13 +68,26 @@ def run_extraction(chunks):
                 if entity.get("score", 0) < 0.4:
                     continue
 
+                start_idx = entity.get("start", 0)
+                end_idx = entity.get("end", 0)
+                
+                # Reconstruct word from original text to avoid WordPiece tokens like ##s
+                word = text[start_idx:end_idx]
+                
+                # Clean punctuation, whitespace, and noisy characters
+                word = word.strip(".,;:()[]{} \t\n\r-*&")
+                
+                if not word or len(word) < 2:
+                    continue
+
                 all_facts.append({
                     "entity_type": entity_type,
-                    "entity_value": entity.get("word", ""),
+                    "entity_value": word,
                     "confidence": float(entity.get("score", 0.0)),
-                    "startIndex": start_offset + entity.get("start", 0),
-                    "endIndex": start_offset + entity.get("end", 0),
-                    "source_chunk_id": "chunk_0"
+                    "startIndex": start_offset + start_idx,
+                    "endIndex": start_offset + end_idx,
+                    "source_chunk_id": chunk_id,
+                    "source_note_id": source_note_id
                 })
                 
         except Exception as e:

@@ -1,4 +1,6 @@
 export interface Chunk {
+  id?: string;
+  sourceNoteId?: string;
   text: string;
   startIndex: number;
   endIndex: number;

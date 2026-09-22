@@ -14,6 +14,16 @@ export class ExtractedFactRepository extends BaseRepository {
         return data as ExtractedFact;
     }
 
+    async createMany(facts: ExtractedFactInsert[]): Promise<ExtractedFact[]> {
+        const { data, error } = await supabase
+            .from('extracted_facts')
+            .insert(facts)
+            .select();
+
+        if (error) this.handleError(error, 'ExtractedFactRepository.createMany');
+        return data as ExtractedFact[];
+    }
+
     async findByEncounterId(encounterId: string): Promise<ExtractedFact[]> {
         const { data, error } = await supabase
             .from('extracted_facts')

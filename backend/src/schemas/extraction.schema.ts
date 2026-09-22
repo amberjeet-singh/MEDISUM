@@ -18,7 +18,8 @@ export const ExtractedFactSchema = z.object({
   confidence: z.number().min(0).max(1),
   startIndex: z.number().int().min(0),
   endIndex: z.number().int().min(0),
-  source_chunk_id: z.string().optional()
+  source_chunk_id: z.string().optional(),
+  source_note_id: z.string().uuid().nullable().optional()
 });
 
 // The payload sent back by the Python ML pipeline
@@ -32,6 +33,7 @@ export const MLPipelineOutputSchema = z.object({
 export const EncounterExtractionResultSchema = z.object({
   encounter_id: z.string().uuid(),
   patient_id: z.string().uuid(),
+
   deterministic_metrics: z.object({
     age_at_encounter: z.number().nullable(),
     length_of_stay_days: z.number().nullable(),

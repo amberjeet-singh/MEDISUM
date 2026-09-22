@@ -3,6 +3,7 @@ import path from 'path';
 import { ClinicalNoteService } from '../../services/clinicalNote.service';
 import { PatientService } from '../../services/patient.service';
 import { EncounterService } from '../../services/encounter.service';
+import { ExtractedFactRepository } from '../../repositories/extractedFact.repository';
 import { chunkText, normalizeText, Chunk } from './chunking';
 import { calculateAge, calculateLengthOfStay } from '../../utils/clinicalCalculators';
 import { EncounterExtractionResult, MLPipelineOutputSchema, ExtractedFact } from '../../schemas/extraction.schema';
@@ -12,11 +13,13 @@ export class ExtractionService {
   private noteService: ClinicalNoteService;
   private patientService: PatientService;
   private encounterService: EncounterService;
+  private extractedFactRepo: ExtractedFactRepository;
 
   constructor() {
     this.noteService = new ClinicalNoteService();
     this.patientService = new PatientService();
     this.encounterService = new EncounterService();
+    this.extractedFactRepo = new ExtractedFactRepository();
   }
 
   /**
@@ -95,29 +98,99 @@ export class ExtractionService {
       console.warn('Could not calculate LOS', e);
     }
 
-    // 3. Preprocess and Chunk Notes
-    const allChunks: Chunk[] = [];
-    // We normalize and chunk each note. (Normally we'd track note ID too for source spans, 
-    // but the chunk schema could be extended if needed. For now, absolute string index per note is fine, 
-    // or we just process all notes as one large corpus string).
-    
-    // To maintain source-span precision across the ENTIRE corpus, we concatenate notes with a clear separator
-    // and track absolute indices.
-    const corpusString = notes.map(n => normalizeText(n.content)).join('\n\n--- NOTE SEPARATOR ---\n\n');
-    const corpusSize = corpusString.length;
-    
-    if (corpusSize > 0) {
-      const chunks = chunkText(corpusString, 1500, 200);
-      allChunks.push(...chunks);
-    }
-
-    // 4. ML Extraction
+    // 3. Check for existing facts in the DB
+    const dbFacts = await this.extractedFactRepo.findByEncounterId(encounterId);
     let extractedFacts: ExtractedFact[] = [];
-    if (allChunks.length > 0) {
-      extractedFacts = await this.runPythonExtractor(allChunks);
+    let corpusSize = 0;
+
+    if (dbFacts.length === 0) {
+      // 4. Preprocess and Chunk Notes for Extraction
+      const allChunks: Chunk[] = [];
+      let globalChunkIndex = 0;
+      
+      for (const n of notes) {
+        const sections = [
+          n.allergies,
+          n.history_of_present_illness,
+          n.past_medical_history,
+          n.social_history,
+          n.family_history,
+          n.physical_exam,
+          n.pertinent_results,
+          n.medications_on_admission,
+          n.discharge_medications
+        ].filter(s => s && s.trim().length > 0);
+        
+        const noteText = normalizeText(sections.join('\n'));
+        if (noteText.length > 0) {
+          const chunks = chunkText(noteText, 1500, 200);
+          for (const c of chunks) {
+            c.sourceNoteId = n.id;
+            c.id = `chunk_${globalChunkIndex++}`;
+            allChunks.push(c);
+          }
+          corpusSize += noteText.length;
+        }
+      }
+
+      // 5. ML Extraction
+      if (allChunks.length > 0) {
+        extractedFacts = await this.runPythonExtractor(allChunks);
+
+        // Deduplicate extracted facts (overlap from chunking can cause duplicates)
+        const uniqueFactsMap = new Map<string, ExtractedFact>();
+        for (const fact of extractedFacts) {
+            // Use entity_type, entity_value, and sourceNoteId as unique key. 
+            // We ignore slight offset differences due to overlap.
+            // Also python extractor passes source_note_id in the JSON, we need to handle it.
+            const sourceNoteId = (fact as any).source_note_id ?? null;
+            const key = `${fact.entity_type}:${fact.entity_value.toLowerCase()}:${sourceNoteId}`;
+            if (!uniqueFactsMap.has(key)) {
+                (fact as any).source_note_id = sourceNoteId; // store back temporarily
+                uniqueFactsMap.set(key, fact);
+            }
+        }
+        extractedFacts = Array.from(uniqueFactsMap.values());
+
+        // 6. Persist Extracted Facts
+        const factsToInsert = extractedFacts.map(fact => ({
+            encounter_id: encounter.id,
+            fact_type: fact.entity_type,
+            fact_key: fact.entity_type, // fallback or map if needed
+            fact_value: fact.entity_value,
+            source_note_id: (fact as any).source_note_id ?? null,
+            source_chunk_id: fact.source_chunk_id ?? null,
+            source_start_index: fact.startIndex,
+            source_end_index: fact.endIndex,
+            confidence: fact.confidence,
+            model_name: 'pabRomero/BioClinicalBERT-full-finetuned-ner-pablo',
+            model_version: 'v1'
+        }));
+
+        if (factsToInsert.length > 0) {
+            await this.extractedFactRepo.createMany(factsToInsert);
+        }
+      }
+    } else {
+        // If facts exist, we map them to the schema format
+        extractedFacts = dbFacts.map(dbFact => ({
+            entity_type: dbFact.fact_type,
+            entity_value: dbFact.fact_value,
+            confidence: dbFact.confidence != null ? Number(dbFact.confidence) : 1.0,
+            startIndex: dbFact.source_start_index ?? 0,
+            endIndex: dbFact.source_end_index ?? 0,
+            source_chunk_id: dbFact.source_chunk_id ?? undefined,
+            source_note_id: dbFact.source_note_id ?? undefined
+        }));
+
+        // We still need to calculate corpusSize for context
+        corpusSize = notes.map(n => {
+            const sections = [n.allergies, n.history_of_present_illness, n.past_medical_history, n.social_history, n.family_history, n.physical_exam, n.pertinent_results, n.medications_on_admission, n.discharge_medications].filter(s => s && s.trim().length > 0);
+            return normalizeText(sections.join('\n'));
+        }).join('\n\n--- NOTE SEPARATOR ---\n\n').length;
     }
 
-    // 5. Structure Output
+    // 7. Structure Output
     return {
       encounter_id: encounter.id,
       patient_id: patient.id,

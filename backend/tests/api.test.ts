@@ -3,6 +3,14 @@ import request from 'supertest';
 import app from '../src/index';
 import { AppError } from '../src/utils/AppError';
 
+// Mock the Supabase config to prevent real network calls
+jest.mock('../src/config/supabase', () => {
+  return {
+    supabase: {},
+    checkSupabaseConnection: jest.fn<() => Promise<boolean>>().mockResolvedValue(true)
+  };
+});
+
 // Mock the services to avoid real database calls during tests
 jest.mock('../src/services/patient.service', () => {
   return {

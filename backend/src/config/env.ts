@@ -6,14 +6,15 @@ export const env = {
   SUPABASE_URL: process.env.SUPABASE_URL,
   SUPABASE_API_KEY: process.env.SUPABASE_API_KEY,
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
-  GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-1.5-pro',
-  NODE_ENV: process.env.NODE_ENV || 'development'
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  USE_MOCK_AI: process.env.USE_MOCK_AI === 'true'
 };
 
 export const validateEnv = () => {
   const missing: string[] = [];
   if (!env.SUPABASE_URL) missing.push('SUPABASE_URL');
   if (!env.SUPABASE_API_KEY) missing.push('SUPABASE_API_KEY');
+  if (!env.USE_MOCK_AI && !env.GEMINI_API_KEY) missing.push('GEMINI_API_KEY');
   
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
