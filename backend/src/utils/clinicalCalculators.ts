@@ -1,20 +1,16 @@
 import { AppError } from './AppError';
 
 /**
- * Calculates patient age based on date of birth and an encounter/reference date.
+ * Calculates patient age based on date of birth using today's actual runtime date.
  * @param dob Date of birth (ISO string or Date)
- * @param referenceDate The date to calculate age at (e.g. admission date)
- * @returns Age in years
+ * @returns Age in completed years
  */
-export const calculateAge = (dob: string | Date, referenceDate: string | Date): number => {
+export const calculateAge = (dob: string | Date): number => {
   const birthDate = new Date(dob);
-  const refDate = new Date(referenceDate);
+  const refDate = new Date(); // Use actual runtime date
 
   if (isNaN(birthDate.getTime())) {
     throw new AppError('Invalid date of birth provided for age calculation', 400);
-  }
-  if (isNaN(refDate.getTime())) {
-    throw new AppError('Invalid reference date provided for age calculation', 400);
   }
 
   let age = refDate.getFullYear() - birthDate.getFullYear();
@@ -55,7 +51,7 @@ export const calculateLengthOfStay = (admissionDate: string | Date, dischargeDat
     throw new AppError('Discharge date cannot be before admission date', 400);
   }
 
-  // Convert to days (using Math.ceil to treat any fraction of a day as a day)
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+  // Convert to completed days (using Math.floor)
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
   return diffDays;
 };

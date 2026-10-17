@@ -204,8 +204,8 @@ export class VerificationService {
             length_of_stay: [] as string[]
         };
 
-        if (patient?.date_of_birth && encounter?.admission_datetime) {
-            const trueAge = calculateAge(patient.date_of_birth, encounter.admission_datetime);
+        if (patient?.date_of_birth) {
+            const trueAge = calculateAge(patient.date_of_birth);
             if (!summaryText.includes(trueAge.toString())) {
                 checks.age.push(`Age mismatch: Expected ${trueAge} not found in summary text.`);
             } else {

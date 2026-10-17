@@ -80,9 +80,15 @@ export class GenerationService {
         const compactedKeysCount = Object.keys(compactedFacts).length;
         console.log(`[Diagnostic] Number of extracted facts: ${totalFacts}`);
         console.log(`[Diagnostic] Compacted context size (keys): ${compactedKeysCount}`);
+        
+        console.log(`[Diagnostic]`);
+        console.log(`Patient Age: ${context.deterministicMetrics.age_at_encounter != null ? context.deterministicMetrics.age_at_encounter + ' years' : 'Not specified'}`);
+        console.log(`Admission Date: ${context.deterministicMetrics.admission_date ? new Date(context.deterministicMetrics.admission_date).toISOString().split('T')[0] : 'Not specified'}`);
+        console.log(`Discharge Date: ${context.deterministicMetrics.discharge_date ? new Date(context.deterministicMetrics.discharge_date).toISOString().split('T')[0] : 'Not specified'}`);
+        console.log(`Length of Stay: ${context.deterministicMetrics.length_of_stay_days != null ? context.deterministicMetrics.length_of_stay_days + ' days' : 'Not specified'}`);
+
         console.log(`[Diagnostic] Final prompt length (system): ${systemPrompt.length} chars`);
         console.log(`[Diagnostic] Final prompt length (user): ${userPrompt.length} chars`);
-        console.log(`[Diagnostic] Generation configuration: { temperature: 0.2 }`);
         // -------------------------
 
         // 2. Call the AI Provider

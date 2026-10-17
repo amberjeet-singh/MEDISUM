@@ -78,13 +78,19 @@ export class ExtractionService {
     const patient = await this.patientService.getPatientById(encounter.patient_id);
     const notes = await this.noteService.getCorpusForGeneration(encounterId);
 
+    console.log(`[Diagnostic]`);
+    console.log(`Encounter ID: ${encounter.id}`);
+    console.log(`Admission: ${encounter.admission_datetime}`);
+    console.log(`Discharge: ${encounter.discharge_datetime}`);
+    console.log(`DOB: ${patient.date_of_birth ? 'redacted' : 'unknown'}`);
+
     // 2. Deterministic calculations
     let ageAtEncounter: number | null = null;
     let losDays: number | null = null;
     
     try {
-      if (patient.date_of_birth && encounter.admission_datetime) {
-        ageAtEncounter = calculateAge(patient.date_of_birth, encounter.admission_datetime);
+      if (patient.date_of_birth) {
+        ageAtEncounter = calculateAge(patient.date_of_birth);
       }
     } catch (e) {
       console.warn('Could not calculate age', e);

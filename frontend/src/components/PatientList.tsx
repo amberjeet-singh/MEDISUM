@@ -9,7 +9,11 @@ export const PatientList: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showCreate, setShowCreate] = useState(false);
-    const [newPatient, setNewPatient] = useState({ external_patient_ref: '', sex: '', date_of_birth: '' });
+    const [newPatient, setNewPatient] = useState({ 
+        external_patient_ref: '', 
+        sex: '', 
+        date_of_birth: ''
+    });
     const [isCreating, setIsCreating] = useState(false);
     const navigate = useNavigate();
 
@@ -31,8 +35,13 @@ export const PatientList: React.FC = () => {
         e.preventDefault();
         setIsCreating(true);
         try {
-            const created = await api.createPatient(newPatient);
-            navigate(`/patients/${created.id}`);
+            const created = await api.createPatient({
+                external_patient_ref: newPatient.external_patient_ref,
+                sex: newPatient.sex,
+                date_of_birth: newPatient.date_of_birth
+            });
+
+            navigate(`/dashboard/patients/${created.id}`);
         } catch (err: any) {
             setError(err.message || 'Failed to create patient');
             setIsCreating(false);
@@ -107,7 +116,7 @@ export const PatientList: React.FC = () => {
                                 <tr 
                                     key={patient.id} 
                                     className="clickable-row"
-                                    onClick={() => navigate(`/patients/${patient.id}`)}
+                                    onClick={() => navigate(`/dashboard/patients/${patient.id}`)}
                                 >
                                     <td>
                                         <div style={{fontWeight: 500, color: 'var(--color-primary)'}}>

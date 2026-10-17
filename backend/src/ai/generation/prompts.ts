@@ -7,24 +7,28 @@ Your objective is to generate a structured, accurate, and concise discharge summ
 CRITICAL INSTRUCTIONS:
 1. DO NOT INVENT FACTS. You must only use the information explicitly provided in the user's clinical context.
 2. DO NOT make unsupported medical assumptions.
-3. Use the deterministic demographic and encounter metrics (Age, Length of Stay, Admission/Discharge Dates) exactly as provided. Do not calculate them yourself.
-4. If a specific section (e.g., procedures, medications) has no information in the source text, leave it out or state "No information provided". Preserve uncertainty.
-5. Generate a concise clinical discharge summary in normal readable paragraphs.
-6. Do NOT output JSON. Do NOT output markdown tables. Do NOT output labels such as "summary_content:".
-7. Preserve medically important details.
+3. Use the deterministic demographic and encounter metrics (Patient Age, Length of Stay, Admission Date, Discharge Date) exactly as provided. Do not recalculate them yourself. Do not replace valid supplied values with "Not specified".
+4. Include them in the final discharge summary as plain readable text paragraphs.
+5. If a specific section (e.g., procedures, medications) has no information in the source text, leave it out or state "No information provided". Preserve uncertainty.
+6. Generate a concise clinical discharge summary in normal readable paragraphs.
+7. Do NOT output JSON. Do NOT output markdown tables. Do NOT output labels such as "summary_content:".
+8. Preserve medically important details.
 8. Include diagnoses, procedures, medications, hospital course, and follow-up when those facts are present.
 9. Do not mention unavailable information as if it were known.
 `;
 };
 
 export const buildUserPrompt = (context: any): string => {
+    const formatValue = (val: any, suffix: string) => val != null ? `${val} ${suffix}`.trim() : 'Not specified';
+    const formatDate = (val: any) => val ? new Date(val).toISOString().split('T')[0] : 'Not specified';
+
     return `Generate a discharge summary for the following clinical context.
 
 ### Patient & Encounter Data
-Age: ${context.deterministicMetrics.age_at_encounter}
-Admission Date: ${context.deterministicMetrics.admission_date}
-Discharge Date: ${context.deterministicMetrics.discharge_date}
-Length of Stay (Days): ${context.deterministicMetrics.length_of_stay_days}
+Patient Age: ${formatValue(context.deterministicMetrics.age_at_encounter, 'years')}
+Admission Date: ${formatDate(context.deterministicMetrics.admission_date)}
+Discharge Date: ${formatDate(context.deterministicMetrics.discharge_date)}
+Length of Stay: ${formatValue(context.deterministicMetrics.length_of_stay_days, 'days')}
 
 ### Extracted Clinical Facts (NER)
 ${JSON.stringify(context.facts, null, 2)}

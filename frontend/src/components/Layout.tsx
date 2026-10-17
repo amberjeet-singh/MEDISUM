@@ -11,23 +11,23 @@ export const Layout: React.FC = () => {
           Medisum
         </div>
         <nav className="sidebar-nav">
-          <NavLink 
-            to="/" 
+          <NavLink
+            to="/dashboard"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             end
           >
             <Users size={18} />
             Patients
           </NavLink>
-          <NavLink 
-            to="/extracted-summary" 
+          <NavLink
+            to="/dashboard/extracted-summary"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
             <Activity size={18} />
             Extracted Summary
           </NavLink>
-          <NavLink 
-            to="/extracted-notes" 
+          <NavLink
+            to="/dashboard/extracted-notes"
             className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
           >
             <FileText size={18} />
@@ -35,13 +35,13 @@ export const Layout: React.FC = () => {
           </NavLink>
         </nav>
       </aside>
-      
+
       <main className="main-content">
         <header className="topbar">
-           {/* Future: breadcrumbs or user profile could go here */}
-           <div style={{fontWeight: 500, color: 'var(--color-text-secondary)'}}>Clinical Discharge Summary Generator</div>
+          {/* Future: breadcrumbs or user profile could go here */}
+          <div style={{ fontWeight: 500, color: 'var(--color-text-secondary)' }}>Clinical Discharge Summary Generator</div>
         </header>
-        
+
         <div className="page-container">
           <Outlet />
         </div>

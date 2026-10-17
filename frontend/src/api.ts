@@ -35,7 +35,7 @@ export const api = {
         const res = await apiClient.get<ApiResponse<Encounter>>(`/encounters/${id}`);
         return res.data.data;
     },
-    createEncounter: async (data: { patient_id: string, service?: string, attending?: string, chief_complaint?: string }) => {
+    createEncounter: async (data: { patient_id: string, service?: string, attending?: string, chief_complaint?: string, admission_datetime?: string, discharge_datetime?: string }) => {
         const res = await apiClient.post<ApiResponse<Encounter>>(`/encounters`, data);
         return res.data.data;
     },

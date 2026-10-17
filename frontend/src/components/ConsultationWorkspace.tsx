@@ -41,7 +41,7 @@ export const ConsultationWorkspace: React.FC = () => {
             
             // 2. Do NOT trigger extraction. Return to patients list.
             alert("Patient added successfully");
-            navigate('/');
+            navigate('/dashboard');
             
         } catch (err: any) {
             setError(err.message || 'Failed to process consultation.');

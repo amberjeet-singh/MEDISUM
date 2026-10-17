@@ -14,7 +14,7 @@ export const EncounterView: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
 
     const [showCreate, setShowCreate] = useState(false);
-    const [newEncounter, setNewEncounter] = useState({ service: '', attending: '', chief_complaint: '' });
+    const [newEncounter, setNewEncounter] = useState({ service: '', attending: '', chief_complaint: '', admission_datetime: '', discharge_datetime: '' });
     const [isCreating, setIsCreating] = useState(false);
     const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
 
@@ -44,10 +44,23 @@ export const EncounterView: React.FC = () => {
         if (!patientId) return;
         setIsCreating(true);
         try {
-            const created = await api.createEncounter({ patient_id: patientId, ...newEncounter });
-            navigate(`/encounters/${created.id}/workspace`);
+            await api.createEncounter({ 
+                patient_id: patientId, 
+                service: newEncounter.service,
+                attending: newEncounter.attending,
+                chief_complaint: newEncounter.chief_complaint,
+                admission_datetime: newEncounter.admission_datetime ? new Date(newEncounter.admission_datetime).toISOString() : undefined,
+                discharge_datetime: newEncounter.discharge_datetime ? new Date(newEncounter.discharge_datetime).toISOString() : undefined,
+            });
+            
+            // Refresh encounter list and reset form
+            const encountersData = await api.getPatientEncounters(patientId);
+            setEncounters(encountersData.data);
+            setShowCreate(false);
+            setNewEncounter({ service: '', attending: '', chief_complaint: '', admission_datetime: '', discharge_datetime: '' });
         } catch (err: any) {
             setError(err.message || 'Failed to create encounter');
+        } finally {
             setIsCreating(false);
         }
     };
@@ -58,10 +71,10 @@ export const EncounterView: React.FC = () => {
             const notes = await api.getEncounterNotes(encounterId);
             if (notes.count > 0) {
                 // Existing notes, skip to extraction
-                navigate(`/encounters/${encounterId}/workspace?step=2`);
+                navigate(`/dashboard/encounters/${encounterId}/workspace?step=2`);
             } else {
                 // No notes, start at rough notes form
-                navigate(`/encounters/${encounterId}/workspace?step=1`);
+                navigate(`/dashboard/encounters/${encounterId}/workspace?step=1`);
             }
         } catch (err: any) {
             setError(err.message || 'Failed to check notes');
@@ -110,6 +123,14 @@ export const EncounterView: React.FC = () => {
                             <label className="form-label">Chief Complaint</label>
                             <input type="text" className="form-textarea" style={{ minHeight: '40px' }} value={newEncounter.chief_complaint} onChange={e => setNewEncounter({...newEncounter, chief_complaint: e.target.value})} />
                         </div>
+                        <div className="form-group">
+                            <label className="form-label">Admission Date (Optional)</label>
+                            <input type="datetime-local" className="form-textarea" style={{ minHeight: '40px' }} value={newEncounter.admission_datetime} onChange={e => setNewEncounter({...newEncounter, admission_datetime: e.target.value})} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Discharge Date (Optional)</label>
+                            <input type="datetime-local" className="form-textarea" style={{ minHeight: '40px' }} value={newEncounter.discharge_datetime} onChange={e => setNewEncounter({...newEncounter, discharge_datetime: e.target.value})} />
+                        </div>
                         <div style={{ display: 'flex', gap: '12px' }}>
                             <button type="submit" className="btn btn-primary" disabled={isCreating}>{isCreating ? 'Creating...' : 'Create'}</button>
                             <button type="button" className="btn btn-secondary" onClick={() => setShowCreate(false)}>Cancel</button>
@@ -130,8 +151,11 @@ export const EncounterView: React.FC = () => {
                                 <div style={{ fontWeight: 600, fontSize: '18px', color: 'var(--color-primary)', marginBottom: '4px' }}>
                                     {encounter.service || 'General Service'}
                                 </div>
-                                <div style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+                                <div style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '4px' }}>
                                     {new Date(encounter.created_at).toLocaleDateString()} • {encounter.attending || 'Unknown Attending'}
+                                </div>
+                                <div style={{ fontSize: '14px', color: 'var(--color-text-secondary)' }}>
+                                    <strong>Admission:</strong> {encounter.admission_datetime ? new Date(encounter.admission_datetime).toLocaleDateString() : 'N/A'} • <strong>Discharge:</strong> {encounter.discharge_datetime ? new Date(encounter.discharge_datetime).toLocaleDateString() : 'N/A'}
                                 </div>
                             </div>
                             
